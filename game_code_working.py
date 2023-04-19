@@ -8,11 +8,12 @@ game_on = False
 start = True
 intro = False
 loading = False
+is_walking = False
+fry_flip = False
 #screens + graphics
 start_screen = uvage.from_image(480,270,'start_screen.png')
 loading_images = uvage.load_sprite_sheet('planet_express_sprite.png', 1, 2)
 planet_express_load = uvage.from_image(480,270,loading_images[-1])
-counter = 0
 loading_frame = 0
 dialogue = []
 read_dialogue = False
@@ -23,7 +24,7 @@ n = 0
 walker_images = uvage.load_sprite_sheet('walk_stand.png', 1, 6)
 walker = uvage.from_image(480,270,walker_images[-1])
 bender_images = uvage.load_sprite_sheet('bender_sheet.png', 1, 6)
-bender = uvage.from_image(480,270,bender_images[-1])
+bender = uvage.from_image(330,270,bender_images[-1])
 walker_x = 480
 walker_y = 270
 walking_frame = 0
@@ -63,7 +64,7 @@ def read_text(dn):
                 read_dialogue = False
                 game_on = True
 '''
-Figure out how to read text one letter at a time across the screen to fit into the text box
+Figure out how to read text one letter at a time across the screen to fit into the text box [for flavor, not important right now]
 '''
 
 #introduction scene to the game where prof. farnsworth is explaing what you will be doing, right after this
@@ -74,34 +75,36 @@ def introduction():
     sprite.scale_by(0.5)
     camera.draw(sprite)
     camera.draw(walker)
+    camera.draw(bender)
     read_dialogue = True
-    dialogue = ["part 1", "second one", "1", "2", "3", "4", "5", "6", "7", ""] #make last dialogue "" to avoid skipping on next line
+    dialogue = ["part 1", "part 2", "1", "2", "3", "4", "5", "6", "7", ""] #make last dialogue "" to avoid skipping on next line
 
 '''
 Figure out how to get dialogue to update and the sprites to change depending on what is said + who is speaking
+
+-draw in each dialogue box and hard code it into game, have key press change out image when it is queued 
 '''
 
+#loading screen [IN WORKING CONDITION]
 def loading_screen():
-    global loading_frame, counter
+    global loading_frame, counter, loading
     is_loading = True
-    loading = uvage.from_text(480, 180, "Loading...", 60, "white")
+    load = uvage.from_text(480, 180, "Loading...", 60, "white")
     loading_screen = uvage.from_color(480, 270, "black", 960, 540)
     camera.draw(loading_screen)
     camera.draw(planet_express_load)
-    camera.draw(loading)
+    camera.draw(load)
     if is_loading:
         loading_frame += 0.05
         loading_frame %= 2
         planet_express_load.image = loading_images[int(loading_frame)]
         counter += 0.05
-        if counter >= 3:
-            print("help")
-
-
+    if counter >= 5:
+        loading = False
 
 #main character walking controls [IN WORKING CONDITION]
 def fry_walk():
-    global walking_frame, facing_right, game_on, walker_x
+    global walking_frame, facing_right, game_on, walker_x, is_walking, fry_flip
     if game_on:
         camera.draw(walker)
         is_walking = False
@@ -109,12 +112,14 @@ def fry_walk():
             if facing_right:
                 walker.flip()
                 facing_right = False
+                fry_flip = True
             walker.x -= walker_velocity
             is_walking = True
         if uvage.is_pressing('right arrow') or uvage.is_pressing('d'):
             if not facing_right:
                 walker.flip()
                 facing_right = True
+                fry_flip = True
             walker.x += walker_velocity
             is_walking = True
         if is_walking:
@@ -137,21 +142,43 @@ def fry_walk():
     '''
 
 def bender_walk():
-    pass
+    global walking_frame, facing_right, walker_x, is_walking, fry_flip
+    if game_on:
+        camera.draw(bender)
+    #fix code
+    if facing_right and fry_flip:
+        bender.flip()
+        fry_flip = False
+    if not facing_right and fry_flip:
+        walker.flip()
+        fry_flip = False
+    #fix code
+    if is_walking:
+        bender.x = walker.x - 150
+        walking_frame += 0.3
+        if walking_frame >= 5:
+            walking_frame = 0
+        bender.image = bender_images[int(walking_frame)]
+    else:
+        bender.image = bender_images[-1]
 
+'''
+have bender follow after fry, flip when he does, and only move when fry is moving
+'''
+
+#draw methods
 def tick():
-    #draw methods
     camera.clear('white')
     game_start()
     if intro:
         introduction()
-    if not loading: #get rid of "not" to have normal game start up
+    if loading:
         loading_screen()
-    if not intro or loading:
+    if not intro:
         fry_walk()
+        bender_walk()
     read_text(n)
     camera.display()
-    #camera.move(walker.x,walker.y)
 
 uvage.timer_loop(30,tick)
 
