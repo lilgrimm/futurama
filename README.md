@@ -1,9 +1,4 @@
 -side scroller (finite screen, left is the planet express ship, all the way right is a barrier [probably the rodeo + amy])
--run sprites fry + bender
--text box sprites
-	-fry
-	-bender
-	-prof. farnsworth (1/2)
 
 deliver to MARS --> there is a rodeo happening on Mars and amy needs to win it to fill her cabinet of awards, but she left her
 stuff at work and that is why fry and bender are delivering it on short notice
