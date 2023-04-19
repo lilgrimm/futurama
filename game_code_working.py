@@ -10,6 +10,7 @@ intro = False
 loading = False
 is_walking = False
 fry_flip = False
+counter = 0
 #screens + graphics
 start_screen = uvage.from_image(480,270,'start_screen.png')
 loading_images = uvage.load_sprite_sheet('planet_express_sprite.png', 1, 2)
@@ -111,15 +112,15 @@ def fry_walk():
         if uvage.is_pressing('left arrow') or uvage.is_pressing('a'):
             if facing_right:
                 walker.flip()
-                facing_right = False
                 fry_flip = True
+                facing_right = False
             walker.x -= walker_velocity
             is_walking = True
         if uvage.is_pressing('right arrow') or uvage.is_pressing('d'):
             if not facing_right:
                 walker.flip()
-                facing_right = True
                 fry_flip = True
+                facing_right = True
             walker.x += walker_velocity
             is_walking = True
         if is_walking:
