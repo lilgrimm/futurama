@@ -12,19 +12,23 @@ mini_start = False
 end_mini = False
 win = False
 end = False
+close_out = False
 package_ready = False
 counter = 0
 points = 0
 time = 0
 #screens + graphics
-start_screen = uvage.from_image(480,270,'start_screen.png')
+start_screen = uvage.from_image(480, 270, 'start_screen.png')
 loading_images = uvage.load_sprite_sheet('planet_express_sprite.png', 1, 2)
-planet_express_load = uvage.from_image(0,270,loading_images[-1])
-main_map = uvage.from_image(1010,240,'main_map.png')
+planet_express_load = uvage.from_image(0, 270, loading_images[-1])
+main_map = uvage.from_image(1010, 240, 'main_map.png')
 main_map.scale_by(1.45)
-foreground = uvage.from_image(1010,240,'foreground.png')
+foreground = uvage.from_image(1010, 240, 'foreground.png')
 foreground.scale_by(1.45)
-end_card = uvage.from_image(480,270,'end_card.png')
+intro_bg = uvage.from_image(480, 270, 'intro_bg.png')
+out_talk = uvage.load_sprite_sheet('out_dia.png', 1, 3)
+out_dia = uvage.from_image(480, 270, out_talk[0])
+end_card = uvage.from_image(480, 270, 'end_card.png')
 walls = []
 loading_frame = 0
 read_dialogue = False
@@ -48,8 +52,8 @@ talk_leela = False
 leela_progress = 0
 talk_betsy = False
 talk_bender = False
-got_hat = True
-got_boots = True
+got_hat = False
+got_boots = False
 got_saddle = False
 got_straw = False
 got_purse = False
@@ -59,15 +63,15 @@ finished_package_dia = uvage.from_image(480, 320, finished_package_talk[0])
 deliver_package_talk = uvage.load_sprite_sheet('deliver_package_dia.png', 1, 5)
 deliver_package_dia = uvage.from_image(1600, 320, deliver_package_talk[0])
 #Sprite movements
-walker_images = uvage.load_sprite_sheet('walk_stand.png', 1, 6)
+walker_images = uvage.load_sprite_sheet('walk_stand.png', 1, 9)
 walker = uvage.from_image(200,400,walker_images[-1])
 walker.scale_by(0.5)
 bender_dist = 115
-bender_images = uvage.load_sprite_sheet('bender_sheet.png', 1, 6)
-bender = uvage.from_image(85,400,bender_images[-1])
+bender_images = uvage.load_sprite_sheet('bender_sheet.png', 1, 9)
+bender = uvage.from_image(85,380,bender_images[-1])
 bender.scale_by(0.5)
 walker_x = 200
-walker_velocity = 13
+walker_velocity = 15
 walking_frame = 0
 facing_right = True
 bender_face_r = True
@@ -109,22 +113,19 @@ talking_frame = 0
 def game_start():
     global game_on, start, intro, loading
     if start:
-        welcome = uvage.from_text(480, 150, "top text", 60, "red", bold=True)
-        press_e_to_start = uvage.from_text(480, 200, "Press E to start", 30, "red", bold=True)
         camera.draw(start_screen)
-        camera.draw(welcome)
-        camera.draw(press_e_to_start)
-        if uvage.is_pressing('e'):
+        if uvage.is_pressing('f'):
             start = False
-            loading = False  #Make True
-            intro = True  #Make True to run actual game w/ intro
+            loading = True
+            intro = True
 
 
 def introduction():
     global game_on, read_dialogue, intro, talking_frame, loading, opening
     game_on = False
+    camera.draw(intro_bg)
     camera.draw(intro_dia)
-    if uvage.is_pressing('space'):
+    if camera.mouseclick:
         talking_frame += 0.25
         intro_dia.image = intro_talk[int(talking_frame - 0.5)]
     if talking_frame >= 7:
@@ -136,7 +137,7 @@ def introduction():
 
 #loading screen [IN WORKING CONDITION]
 def loading_screen():
-    global loading_frame, counter, loading, game_on, walker_x, package_ready, opening
+    global loading_frame, counter, loading, game_on, walker_x, package_ready, opening, close_out
     camera.left = -480
     game_on = False
     is_loading = True
@@ -154,12 +155,11 @@ def loading_screen():
         loading = False
         game_on = True
         counter = 0
-        camera.center = [walker_x, 270]
-        if opening:
-            walker.center = [200, 400]
-            bender.center = [85, 400]
-            camera.center = [480, 270]
-        if package_ready:
+        if close_out:
+            walker_shift = walker_x - 20
+            camera.center = [walker_shift, 270]
+            close_out = False
+        if package_ready or opening or intro:
             walker_x = 200
             walker.center = [200, 400]
             bender.center = [85, 400]
@@ -181,8 +181,6 @@ def main_game():
         camera.draw(leela)
     #interaction points
     prompt = uvage.from_text(walker_x, 480, "Press E to Talk", 30, "black", bold=True)
-    if uvage.is_pressing("p"):
-        got_saddle = True
     if 800 <= walker_x <= 900 and not got_package:
         camera.draw(prompt)
         if uvage.is_pressing('e'):
@@ -235,7 +233,7 @@ def read_text():
     camera.draw(foreground)
     if opening:
         camera.draw(opening_dia)
-        if uvage.is_pressing('space'):
+        if camera.mouseclick:
             talking_frame += 0.25
             opening_dia.image = opening_talk[int(talking_frame - 0.5)]
         if talking_frame >= 5:
@@ -247,7 +245,7 @@ def read_text():
     if talk_kip:
         if kip_progress == 0:
             camera.draw(kip_dia_one)
-            if uvage.is_pressing('space'):
+            if camera.mouseclick:
                 talking_frame += 0.25
                 kip_dia_one.image = kip_talk_one[int(talking_frame - 0.5)]
             if talking_frame >= 10: #however long the sprite sheet is without starting at an index of 1 (uvage indexs at 1, python at 0 and this causes issues)
@@ -258,7 +256,7 @@ def read_text():
                 talking_frame = 0
         if kip_progress == 1:
             camera.draw(kip_dia_two)
-            if uvage.is_pressing('space'):
+            if camera.mouseclick:
                 talking_frame += 0.25
                 kip_dia_two.image = kip_talk_two[int(talking_frame - 0.5)]
                 if talking_frame >= 2:
@@ -271,7 +269,7 @@ def read_text():
             loading = True
         if kip_progress == 2:
             camera.draw(kip_dia_three)
-            if uvage.is_pressing('space'):
+            if camera.mouseclick:
                 talking_frame += 0.25
                 kip_dia_three.image = kip_talk_three[int(talking_frame - 0.5)]
                 if talking_frame >= 3:
@@ -283,7 +281,7 @@ def read_text():
                     game_on = True
         if kip_progress == 3:
             camera.draw(kip_dia_four)
-            if uvage.is_pressing('space'):
+            if camera.mouseclick:
                 talking_frame += 0.25
                 if talking_frame >= 1:
                     talk_kip = False
@@ -294,7 +292,7 @@ def read_text():
     if talk_leela:
         if leela_progress == 0:
             camera.draw(leela_dia_one)
-            if uvage.is_pressing('space'):
+            if camera.mouseclick:
                 talking_frame += 0.25
                 leela_dia_one.image = leela_talk_one[int(talking_frame - 0.5)]
             if talking_frame >= 9:
@@ -306,7 +304,7 @@ def read_text():
                 leela_dia_one.image = leela_talk_one[int(talking_frame)]
         if leela_progress == 1:
             camera.draw(leela_dia_two)
-            if uvage.is_pressing('space'):
+            if camera.mouseclick:
                 talking_frame += 0.25
                 leela_dia_two.image = leela_talk_two[int(talking_frame - 0.5)]
             if talking_frame >= 5:
@@ -325,7 +323,7 @@ def read_text():
     if talk_amy:
         if amy_progress == 0:
             camera.draw(amy_dia_one)
-            if uvage.is_pressing('space'):
+            if camera.mouseclick:
                 talking_frame += 0.25
                 amy_dia_one.image = amy_talk_one[int(talking_frame - 0.5)]
             if talking_frame >= 6:
@@ -336,7 +334,7 @@ def read_text():
                 amy_dia_one.image = amy_talk_one[int(talking_frame)]
         if amy_progress == 1:
             camera.draw(amy_dia_two)
-            if uvage.is_pressing('space'):
+            if camera.mouseclick:
                 talking_frame += 0.25
                 amy_dia_two.image = amy_talk_two[int(talking_frame - 0.5)]
             if talking_frame >= 3:
@@ -353,10 +351,11 @@ def read_text():
             game_on = True
         if amy_progress == 3:
             camera.draw(deliver_package_dia)
-            if uvage.is_pressing('space'):
+            if camera.mouseclick:
                 talking_frame += 0.25
                 deliver_package_dia.image = deliver_package_talk[int(talking_frame - 0.5)]
             if talking_frame >= 5:
+                loading = True
                 outro = True
                 talk_amy = False
                 talking_frame = 0
@@ -364,7 +363,7 @@ def read_text():
     if talk_betsy:
         if not got_straw:
             camera.draw(betsy_one)
-            if uvage.is_pressing('space'):
+            if camera.mouseclick:
                 talking_frame += 0.25
             if talking_frame >= 1:
                 talk_betsy = False
@@ -373,7 +372,7 @@ def read_text():
                 talking_frame = 0
         if got_straw:
             camera.draw(betsy_dia_two)
-            if uvage.is_pressing('space'):
+            if camera.mouseclick:
                 talking_frame += 0.25
                 betsy_dia_two.image = betsy_talk_two[int(talking_frame - 0.5)]
             if talking_frame >= 3:
@@ -382,11 +381,14 @@ def read_text():
                 read_dialogue = False
                 game_on = True
                 talking_frame = 0
-                amy_dia_two.image = amy_talk_two[int(talking_frame)]
+        if got_hat:
+            talk_betsy = False
+            read_dialogue = False
+            game_on = True
 
     if talk_bender:
         camera.draw(bender_dia_one)
-        if uvage.is_pressing('space'):
+        if camera.mouseclick:
             talking_frame += 0.25
             bender_dia_one.image = bender_talk_one[int(talking_frame - 0.5)]
         if talking_frame >= 7:
@@ -402,7 +404,7 @@ def read_text():
         if walker_x == 200:
             loading = False
             camera.draw(finished_package_dia)
-            if uvage.is_pressing('space'):
+            if camera.mouseclick:
                 talking_frame += 0.25
                 finished_package_dia.image = finished_package_talk[int(talking_frame - 0.5)]
             if talking_frame >= 3:
@@ -416,7 +418,7 @@ def read_text():
 
 
 def mini_game():
-    global game_on, mini, mini_start, points, kip_progress, time, talk_kip, read_dialogue, win, end_mini, loading
+    global game_on, mini, mini_start, points, kip_progress, time, talk_kip, read_dialogue, win, end_mini, loading, close_out
     game_on = False
     read_dialogue = False
     camera.left = 480
@@ -433,7 +435,7 @@ def mini_game():
     if mini_start and not end_mini:
         time += 0.05
         print(time)
-        if uvage.is_pressing('space'):
+        if camera.mouseclick:
             points += 1
             if points == 35:
                 bend_mini_game.image = bender_mini_screen[3]
@@ -445,44 +447,45 @@ def mini_game():
                 bend_mini_game.image = bender_mini_screen[6]
                 win = True
                 end_mini = True
-        if time >= 10:
+        if time >= 15:
             win = False
             end_mini = True
 
     if end_mini and not win:
         time = 0
         bend_mini_game.image = bender_mini_screen[0]
-        print("Press enter to exit")
-        if uvage.is_pressing('left shift'):
+        if uvage.is_pressing('f'):
             points = 0
+            close_out = True
+            loading = True
             mini = False
             mini_start = False
             end_mini = False
             game_on = True
-            loading = True
             bend_mini_game.image = bender_mini_screen[1]
-            camera.center = [walker_x, 270]
     if end_mini and win:
         time = 0
-        print("Press left shift to exit")
-        if uvage.is_pressing('left shift'):
+        print("Press f to exit")
+        if uvage.is_pressing('f'):
             kip_progress = 2
+            close_out = True
+            loading = True
             mini = False
             mini_start = False
             end_mini = False
             read_dialogue = True
             talk_kip = True
-            camera.center = [walker_x, 270]
 
 def outro_scene():
     global game_on, read_dialogue, intro, talking_frame, loading, outro, end
     camera.center = [480, 270]
     game_on = False
-    camera.draw(intro_dia)
-    if uvage.is_pressing('space'):
+    camera.draw(game_box)
+    camera.draw(out_dia)
+    if camera.mouseclick:
         talking_frame += 0.25
-        intro_dia.image = intro_talk[int(talking_frame - 0.5)]
-    if talking_frame >= 7:
+        out_dia.image = out_talk[int(talking_frame - 0.5)]
+    if talking_frame >= 3:
         outro = False
         end = True
         talking_frame = 0
@@ -517,7 +520,6 @@ def fry_walk():
             camera.move(-walker_velocity, 0)
             fry_walk_r = False
             is_walking = True
-            print(walker_x)
             if walker.x <= 490:
                 camera.move(walker_velocity, 0)
             if walker.x >= 1540:
@@ -538,8 +540,8 @@ def fry_walk():
             if walker.x >= 1553:
                 camera.move(-walker_velocity, 0)
         if is_walking:
-            walking_frame += 0.3
-            if walking_frame >= 5:
+            walking_frame += 0.05
+            if walking_frame >= 8:
                 walking_frame = 0
             walker.image = walker_images[int(walking_frame)]
         else:
@@ -560,7 +562,7 @@ def bender_walk():
             bender_face_r = True
         if is_walking:
             walking_frame += 0.3
-            if walking_frame >= 5:
+            if walking_frame >= 8:
                 walking_frame = 0
             bender.image = bender_images[int(walking_frame)]
             if fry_walk_r:
@@ -596,12 +598,12 @@ def tick():
         bender_walk()
         collision()
         camera.draw(foreground)
-    if loading:
-        loading_screen()
     if mini and not loading:
         mini_game()
     if outro:
         outro_scene()
+    if loading:
+        loading_screen()
     if end:
         the_end()
     camera.display()
